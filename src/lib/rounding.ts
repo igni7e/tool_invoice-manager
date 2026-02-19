@@ -14,24 +14,26 @@ export interface LineItem {
   unitCost: number;
   qty: number;
   taxRate: number;
-  currency: string;
+  currency?: string;
   exchangeRate?: number;
 }
 
 /**
  * 行の税込金額をJPY換算で計算（切り捨て）
+ * Number.EPSILON 補正: 浮動小数点誤差で x.9999... になるケースを防ぐ
  */
 export function calcAmountJpy(item: LineItem): number {
   const { unitCost, qty, taxRate, exchangeRate = 1 } = item;
-  return Math.floor(unitCost * qty * (1 + taxRate) * exchangeRate);
+  return Math.floor(unitCost * qty * (1 + taxRate) * exchangeRate + Number.EPSILON);
 }
 
 /**
  * 行の税抜金額をJPY換算で計算（切り捨て）
+ * Number.EPSILON 補正: 浮動小数点誤差で x.9999... になるケースを防ぐ
  */
 export function calcSubtotalJpy(item: LineItem): number {
   const { unitCost, qty, exchangeRate = 1 } = item;
-  return Math.floor(unitCost * qty * exchangeRate);
+  return Math.floor(unitCost * qty * exchangeRate + Number.EPSILON);
 }
 
 /**

@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { getDb } from '@/db';
 import { invoices, invoiceItems, exchangeRates } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
+import { createInvoiceSchema, parseBody } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
 
 export async function GET(request: Request) {
@@ -25,88 +26,72 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const db = getDb(process.env as unknown as { DB: D1Database });
+  let invoiceId: number | undefined;
+
   try {
-    const body = await request.json() as {
-      clientId: number;
-      invoiceNumber: string;
-      invoiceDate: string;
-      dueDate: string;
-      currency?: string;
-      status?: string;
-      notes?: string;
-      notesEn?: string;
-      items: Array<{
-        description: string;
-        descriptionEn?: string;
-        unitCost: number;
-        qty?: number;
-        taxRate?: number;
-        currency?: string;
-        exchangeRate?: number;
-        sortOrder?: number;
-      }>;
-      exchangeRates?: Array<{
-        currency: string;
-        rate: number;
-        rateDate: string;
-      }>;
-    };
+    const raw = await request.json();
+    const parsed = parseBody(createInvoiceSchema, raw);
+    if ('error' in parsed) return parsed.error;
+    const body = parsed.data;
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
-
-    // 各行のamountJpyを計算
+    // 各行の amountJpy を計算（端数処理統一）
     const itemsWithAmount = body.items.map((item, index) => ({
       description: item.description,
       descriptionEn: item.descriptionEn,
       unitCost: item.unitCost,
-      qty: item.qty ?? 1,
-      taxRate: item.taxRate ?? 0.1,
-      currency: item.currency ?? body.currency ?? 'JPY',
-      exchangeRate: item.exchangeRate ?? 1,
+      qty: item.qty,
+      taxRate: item.taxRate,
+      currency: item.currency,
+      exchangeRate: item.exchangeRate,
       sortOrder: item.sortOrder ?? index,
       amountJpy: calcAmountJpy({
         unitCost: item.unitCost,
-        qty: item.qty ?? 1,
-        taxRate: item.taxRate ?? 0.1,
-        currency: item.currency ?? body.currency ?? 'JPY',
-        exchangeRate: item.exchangeRate ?? 1,
+        qty: item.qty,
+        taxRate: item.taxRate,
+        exchangeRate: item.exchangeRate,
       }),
     }));
 
     const { totalJpy } = calcTotals(itemsWithAmount);
 
-    // 請求書本体を作成
+    // Step 1: 請求書本体を挿入
     const invoiceResult = await db.insert(invoices).values({
       clientId: body.clientId,
       invoiceNumber: body.invoiceNumber,
       invoiceDate: body.invoiceDate,
       dueDate: body.dueDate,
-      currency: body.currency ?? 'JPY',
-      status: body.status ?? 'draft',
+      currency: body.currency,
+      status: body.status,
       notes: body.notes,
       notesEn: body.notesEn,
       totalJpy,
     }).returning();
 
     const invoice = invoiceResult[0];
+    invoiceId = invoice.id;
 
-    // 明細を一括挿入
+    // Step 2: 明細を挿入（失敗時は catch で invoices を補償削除）
     if (itemsWithAmount.length > 0) {
       await db.insert(invoiceItems).values(
-        itemsWithAmount.map(item => ({ ...item, invoiceId: invoice.id })),
+        itemsWithAmount.map((item) => ({ ...item, invoiceId: invoice.id }))
       );
     }
 
-    // 為替レートを挿入
+    // Step 3: 為替レートを挿入
     if (body.exchangeRates && body.exchangeRates.length > 0) {
       await db.insert(exchangeRates).values(
-        body.exchangeRates.map(er => ({ ...er, invoiceId: invoice.id })),
+        body.exchangeRates.map((er) => ({ ...er, invoiceId: invoice.id }))
       );
     }
 
     return Response.json(invoice, { status: 201 });
   } catch (error) {
     console.error(error);
+    // 補償: 請求書だけ挿入されて明細が失敗した場合は請求書を削除
+    if (invoiceId !== undefined) {
+      await db.delete(invoices).where(eq(invoices.id, invoiceId)).catch(console.error);
+    }
     return Response.json({ error: 'Failed to create invoice' }, { status: 500 });
   }
 }

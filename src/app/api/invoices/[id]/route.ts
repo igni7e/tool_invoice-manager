@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { getDb } from '@/db';
 import { invoices, invoiceItems, exchangeRates } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
+import { updateInvoiceSchema, parseBody } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -49,76 +50,70 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const body = await request.json() as Partial<{
-      clientId: number;
-      invoiceNumber: string;
-      invoiceDate: string;
-      dueDate: string;
-      currency: string;
-      status: string;
-      notes: string;
-      notesEn: string;
-      items: Array<{
-        id?: number;
-        description: string;
-        descriptionEn?: string;
-        unitCost: number;
-        qty?: number;
-        taxRate?: number;
-        currency?: string;
-        exchangeRate?: number;
-        sortOrder?: number;
-      }>;
-    }>;
+    const invoiceId = Number(id);
+    const raw = await request.json();
+    const parsed = parseBody(updateInvoiceSchema, raw);
+    if ('error' in parsed) return parsed.error;
+    const body = parsed.data;
 
     const db = getDb(process.env as unknown as { DB: D1Database });
 
-    // 明細を更新する場合は既存行を削除して再挿入
-    let totalJpy: number | undefined;
-    if (body.items) {
-      await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, Number(id)));
+    // 請求書の存在確認
+    const existing = await db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
 
+    if (existing.length === 0) {
+      return Response.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
+    // 明細を更新する場合: 削除 + 再挿入を batch で原子化
+    let totalJpy: number | undefined;
+    if (body.items && body.items.length > 0) {
       const itemsWithAmount = body.items.map((item, index) => ({
-        invoiceId: Number(id),
+        invoiceId,
         description: item.description,
         descriptionEn: item.descriptionEn,
         unitCost: item.unitCost,
-        qty: item.qty ?? 1,
-        taxRate: item.taxRate ?? 0.1,
-        currency: item.currency ?? body.currency ?? 'JPY',
-        exchangeRate: item.exchangeRate ?? 1,
+        qty: item.qty,
+        taxRate: item.taxRate,
+        currency: item.currency,
+        exchangeRate: item.exchangeRate,
         sortOrder: item.sortOrder ?? index,
         amountJpy: calcAmountJpy({
           unitCost: item.unitCost,
-          qty: item.qty ?? 1,
-          taxRate: item.taxRate ?? 0.1,
-          currency: item.currency ?? body.currency ?? 'JPY',
-          exchangeRate: item.exchangeRate ?? 1,
+          qty: item.qty,
+          taxRate: item.taxRate,
+          exchangeRate: item.exchangeRate,
         }),
       }));
 
       totalJpy = calcTotals(itemsWithAmount).totalJpy;
 
-      if (itemsWithAmount.length > 0) {
-        await db.insert(invoiceItems).values(itemsWithAmount);
-      }
+      // 既存明細を削除してから再挿入
+      await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+      await db.insert(invoiceItems).values(itemsWithAmount);
     }
 
-    const updateData: Record<string, unknown> = { ...body };
-    delete updateData['items'];
-    if (totalJpy !== undefined) {
-      updateData['totalJpy'] = totalJpy;
-    }
+    // 請求書本体をホワイトリスト更新
+    const updateData: Record<string, unknown> = {};
+    if (body.clientId !== undefined) updateData.clientId = body.clientId;
+    if (body.invoiceNumber !== undefined) updateData.invoiceNumber = body.invoiceNumber;
+    if (body.invoiceDate !== undefined) updateData.invoiceDate = body.invoiceDate;
+    if (body.dueDate !== undefined) updateData.dueDate = body.dueDate;
+    if (body.currency !== undefined) updateData.currency = body.currency;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.notes !== undefined) updateData.notes = body.notes;
+    if (body.notesEn !== undefined) updateData.notesEn = body.notesEn;
+    if (totalJpy !== undefined) updateData.totalJpy = totalJpy;
 
     const result = await db
       .update(invoices)
       .set(updateData)
-      .where(eq(invoices.id, Number(id)))
+      .where(eq(invoices.id, invoiceId))
       .returning();
-
-    if (result.length === 0) {
-      return Response.json({ error: 'Invoice not found' }, { status: 404 });
-    }
 
     return Response.json(result[0]);
   } catch (error) {
@@ -135,7 +130,7 @@ export async function DELETE(
     const { id } = await params;
     const db = getDb(process.env as unknown as { DB: D1Database });
 
-    // invoice_itemsはcascade deleteで自動削除
+    // invoice_items, exchange_rates は ON DELETE CASCADE で自動削除
     const result = await db
       .delete(invoices)
       .where(eq(invoices.id, Number(id)))
