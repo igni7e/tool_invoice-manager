@@ -1,7 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import { formatCurrency } from '@/lib/rounding';
+import type { InvoicePdfData } from '@/components/pdf/InvoiceDocument';
+
+// @react-pdf/renderer はSSRで動作しないため dynamic import
+const PdfDownloadButton = lazy(() =>
+  import('@/components/pdf/PdfDownloadButton').then((m) => ({ default: m.PdfDownloadButton }))
+);
 
 interface InvoiceItem {
   id: number;
@@ -55,6 +61,24 @@ export default function InvoicePrintPage() {
   );
   const tax = invoice.totalJpy - subtotal;
 
+  const pdfData: InvoicePdfData = {
+    invoice: {
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate,
+      dueDate: invoice.dueDate,
+      notes: invoice.notes,
+      notesEn: invoice.notesEn,
+      totalJpy: invoice.totalJpy,
+    },
+    client: {
+      name: invoice.client.name,
+      nameEn: invoice.client.nameEn,
+      address: invoice.client.address,
+      addressEn: invoice.client.addressEn,
+    },
+    items: invoice.items,
+  };
+
   return (
     <>
       <style>{`
@@ -74,11 +98,20 @@ export default function InvoicePrintPage() {
         >
           {isJa ? 'EN' : 'JA'}
         </button>
+        <Suspense
+          fallback={
+            <button className='bg-brand-600 text-white px-4 py-1.5 rounded text-sm font-medium opacity-60'>
+              PDF準備中...
+            </button>
+          }
+        >
+          <PdfDownloadButton data={pdfData} lang={lang} invoiceNumber={invoice.invoiceNumber} />
+        </Suspense>
         <button
           onClick={() => window.print()}
-          className='bg-brand-600 text-white px-4 py-1.5 rounded text-sm font-medium'
+          className='bg-gray-700 text-white px-3 py-1.5 rounded text-sm'
         >
-          PDFとして保存
+          印刷
         </button>
         <a
           href={`/invoices/${id}`}
