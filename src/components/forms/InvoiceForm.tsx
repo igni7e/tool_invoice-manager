@@ -58,11 +58,12 @@ const emptyItem = (currency: string, taxRate: number): InvoiceItem => ({
 
 export function InvoiceForm({ initialData, onSubmit, submitLabel = '保存' }: InvoiceFormProps) {
   const [clients, setClients] = useState<Client[]>([]);
+  const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState<InvoiceFormData>({
     clientId: initialData?.clientId ?? 0,
     invoiceNumber: initialData?.invoiceNumber ?? '',
-    invoiceDate: initialData?.invoiceDate ?? new Date().toISOString().split('T')[0],
-    dueDate: initialData?.dueDate ?? '',
+    invoiceDate: initialData?.invoiceDate ?? today,
+    dueDate: initialData?.dueDate ?? calcDueDate(initialData?.invoiceDate ?? today),
     currency: initialData?.currency ?? 'JPY',
     status: initialData?.status ?? 'draft',
     notes: initialData?.notes ?? '',
@@ -248,7 +249,9 @@ export function InvoiceForm({ initialData, onSubmit, submitLabel = '保存' }: I
                   <th className='text-right py-2 px-2 text-xs text-gray-500 font-medium w-28'>単価</th>
                   <th className='text-right py-2 px-2 text-xs text-gray-500 font-medium w-20'>数量</th>
                   <th className='text-center py-2 px-2 text-xs text-gray-500 font-medium w-24'>通貨</th>
-                  <th className='text-right py-2 px-2 text-xs text-gray-500 font-medium w-28'>為替レート</th>
+                  {form.items.some((it) => it.currency !== 'JPY') && (
+                    <th className='text-right py-2 px-2 text-xs text-gray-500 font-medium w-28'>為替レート</th>
+                  )}
                   <th className='text-center py-2 px-2 text-xs text-gray-500 font-medium w-20'>税率</th>
                   <th className='text-right py-2 px-2 text-xs text-gray-500 font-medium w-28'>税込金額(JPY)</th>
                   <th className='w-8'></th>
@@ -300,17 +303,22 @@ export function InvoiceForm({ initialData, onSubmit, submitLabel = '保存' }: I
                           ))}
                         </select>
                       </td>
-                      <td className='py-2 px-2'>
-                        <input
-                          type='number'
-                          className={`input text-sm py-1.5 text-right ${!isForeign ? 'bg-gray-50 text-gray-300' : ''}`}
-                          value={item.exchangeRate}
-                          onChange={(e) => updateItem(i, 'exchangeRate', parseFloat(e.target.value) || 1)}
-                          disabled={!isForeign}
-                          step='any'
-                          min={0.0001}
-                        />
-                      </td>
+                      {form.items.some((it) => it.currency !== 'JPY') && (
+                        <td className='py-2 px-2'>
+                          {isForeign ? (
+                            <input
+                              type='number'
+                              className='input text-sm py-1.5 text-right'
+                              value={item.exchangeRate}
+                              onChange={(e) => updateItem(i, 'exchangeRate', parseFloat(e.target.value) || 1)}
+                              step='any'
+                              min={0.0001}
+                            />
+                          ) : (
+                            <span className='text-xs text-gray-300 px-3'>—</span>
+                          )}
+                        </td>
+                      )}
                       <td className='py-2 px-2'>
                         <select
                           className='input text-sm py-1.5 text-center'
@@ -334,7 +342,8 @@ export function InvoiceForm({ initialData, onSubmit, submitLabel = '保存' }: I
                         <button
                           type='button'
                           onClick={() => removeItem(i)}
-                          className='opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all text-lg leading-none'
+                          className='text-gray-300 hover:text-red-500 transition-colors text-lg leading-none'
+                          title='削除'
                         >
                           ×
                         </button>
