@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { getDb } from '@/db';
-import { invoices, invoiceItems, exchangeRates } from '@/db/schema';
+import { invoices, invoiceItems, exchangeRates, clients } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
 import { updateInvoiceSchema, parseBody } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
@@ -23,18 +23,15 @@ export async function GET(
       return Response.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    const items = await db
-      .select()
-      .from(invoiceItems)
-      .where(eq(invoiceItems.invoiceId, Number(id)));
-
-    const rates = await db
-      .select()
-      .from(exchangeRates)
-      .where(eq(exchangeRates.invoiceId, Number(id)));
+    const [items, rates, clientResult] = await Promise.all([
+      db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, Number(id))),
+      db.select().from(exchangeRates).where(eq(exchangeRates.invoiceId, Number(id))),
+      db.select().from(clients).where(eq(clients.id, invoiceResult[0].clientId)),
+    ]);
 
     return Response.json({
       ...invoiceResult[0],
+      client: clientResult[0] ?? null,
       items,
       exchangeRates: rates,
     });
