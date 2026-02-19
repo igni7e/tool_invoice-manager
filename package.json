@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "deploy": "npm run build && wrangler pages deploy .next"
+    "pages:build": "npm run build && npx @cloudflare/next-on-pages",
+    "deploy": "npm run pages:build && CLOUDFLARE_API_TOKEN='' wrangler pages deploy .vercel/output/static --project-name tool-invoice-manager --commit-dirty=true"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.7",
@@ -32,6 +33,6 @@
     "eslint-config-next": "15.1.7",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
-    "wrangler": "^3.110.0"
+    "wrangler": "^4.66.0"
   }
 }

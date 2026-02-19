@@ -1,4 +1,5 @@
 'use client';
+export const runtime = 'edge';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import { formatCurrency } from '@/lib/rounding';

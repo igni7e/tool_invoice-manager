@@ -6,7 +6,7 @@ pages_build_output_dir = ".vercel/output/static"
 [[d1_databases]]
 binding = "DB"
 database_name = "invoice-manager"
-database_id = "placeholder-replace-after-create"
+database_id = "3f5743e4-ee6d-4802-9dec-0d5fbd5e9bd3"
 
 [vars]
 NEXT_PUBLIC_APP_NAME = "Invoice Manager"
