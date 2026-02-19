@@ -84,6 +84,17 @@ wrangler d1 execute invoice-manager --file=migration.sql
 
 検証値: NLCSv2 = ¥666,464（消費税 ¥60,588）
 
+## TODO（Daisukeのタスク）
+
+デプロイまでに必要な手動作業：
+
+- [ ] **D1データベース作成** — `wrangler d1 create invoice-manager` を実行し、出力された `database_id` を `wrangler.toml` の `database_id = "placeholder-replace-after-create"` と置き換える
+- [ ] **スキーマ適用** — `wrangler d1 execute invoice-manager --file=migrations/0001_initial.sql`
+- [ ] **Cloudflare Pages 連携** — Cloudflare Dashboard → Pages → Connect to Git → `daisuke-ignite/tool_invoice-manager` を選択。Build command: `npm run build`、Output dir: `.next`
+- [ ] **Cloudflare Access 設定** — Zero Trust → Access → Applications → Add（Self-hosted）→ `@igni7e.jp` メールOTPポリシーを設定（5分）
+- [ ] **Excelデータ移行** — `scripts/migrate_excel.py` でExcelファイルを指定してSQLを生成し、D1に投入
+- [ ] **1spread/tool_invoice-manager を削除** — 誤って作成したリポジトリを GitHub Settings → Danger Zone から削除
+
 ## Changelog
 
 ### 2026-02-19 - 初回実装
