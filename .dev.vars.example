@@ -1,0 +1,5 @@
+# ローカル開発用環境変数テンプレート
+# .dev.vars としてコピーして使用 (gitignore済み)
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+CLOUDFLARE_DATABASE_ID=your-d1-database-id
+CLOUDFLARE_D1_TOKEN=your-d1-api-token

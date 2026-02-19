@@ -1,0 +1,12 @@
+name = "tool-invoice-manager"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "invoice-manager"
+database_id = "placeholder-replace-after-create"
+
+[vars]
+NEXT_PUBLIC_APP_NAME = "Invoice Manager"
