@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 import { getDb } from '@/db';
-import { invoices, invoiceItems, exchangeRates, clients } from '@/db/schema';
+import { invoices, invoiceItems, exchangeRates, clients, bankAccounts } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
 import { updateInvoiceSchema, parseBody } from '@/lib/validation';
 import { eq } from 'drizzle-orm';
@@ -23,17 +23,24 @@ export async function GET(
       return Response.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    const [items, rates, clientResult] = await Promise.all([
+    const inv = invoiceResult[0];
+    const queries: [Promise<unknown[]>, Promise<unknown[]>, Promise<unknown[]>, Promise<unknown[]>?] = [
       db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, Number(id))),
       db.select().from(exchangeRates).where(eq(exchangeRates.invoiceId, Number(id))),
-      db.select().from(clients).where(eq(clients.id, invoiceResult[0].clientId)),
-    ]);
+      db.select().from(clients).where(eq(clients.id, inv.clientId)),
+    ];
+    if (inv.bankAccountId) {
+      queries.push(db.select().from(bankAccounts).where(eq(bankAccounts.id, inv.bankAccountId)));
+    }
+
+    const [items, rates, clientResult, bankAccountResult] = await Promise.all(queries);
 
     return Response.json({
-      ...invoiceResult[0],
-      client: clientResult[0] ?? null,
+      ...inv,
+      client: (clientResult as unknown[])[0] ?? null,
       items,
       exchangeRates: rates,
+      bankAccount: bankAccountResult ? (bankAccountResult as unknown[])[0] ?? null : null,
     });
   } catch (error) {
     console.error(error);
@@ -75,6 +82,7 @@ export async function PUT(
         descriptionEn: item.descriptionEn,
         unitCost: item.unitCost,
         qty: item.qty,
+        unit: item.unit,
         taxRate: item.taxRate,
         currency: item.currency,
         exchangeRate: item.exchangeRate,
@@ -105,6 +113,7 @@ export async function PUT(
     if (body.notes !== undefined) updateData.notes = body.notes;
     if (body.notesEn !== undefined) updateData.notesEn = body.notesEn;
     if (totalJpy !== undefined) updateData.totalJpy = totalJpy;
+    if (body.bankAccountId !== undefined) updateData.bankAccountId = body.bankAccountId;
 
     const result = await db
       .update(invoices)

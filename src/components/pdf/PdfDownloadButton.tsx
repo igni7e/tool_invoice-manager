@@ -34,7 +34,9 @@ export function PdfDownloadButton({ data, lang, invoiceNumber }: Props) {
       disabled={generating}
       className='bg-brand-600 text-white px-4 py-1.5 rounded text-sm font-medium disabled:opacity-60'
     >
-      {generating ? 'PDF生成中...' : 'PDFダウンロード'}
+      {generating
+        ? (lang === 'en' ? 'Generating...' : 'PDF生成中...')
+        : (lang === 'en' ? 'Download PDF' : 'PDFダウンロード')}
     </button>
   );
 }

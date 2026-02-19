@@ -10,6 +10,7 @@ interface InvoiceItem {
   descriptionEn: string | null;
   unitCost: number;
   qty: number;
+  unit: string | null;
   taxRate: number;
   currency: string;
   exchangeRate: number | null;
@@ -30,8 +31,6 @@ interface Invoice {
   items: InvoiceItem[];
   client?: { name: string; address: string | null; contactEmail: string | null };
 }
-
-const STATUS_MAP: Record<string, string> = { draft: '下書き', sent: '送付済み', paid: '入金済み' };
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,6 +65,12 @@ export default function InvoiceDetailPage() {
         </div>
         <div className='flex gap-3'>
           <a
+            href={`/invoices/new?from=${id}`}
+            className='btn-secondary'
+          >
+            複製
+          </a>
+          <a
             href={`/invoices/${id}/print`}
             target='_blank'
             className='btn-secondary'
@@ -78,11 +83,7 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      <div className='grid grid-cols-3 gap-6 mb-6'>
-        <div className='card'>
-          <p className='text-xs text-gray-500 mb-1'>ステータス</p>
-          <p className='font-medium'>{STATUS_MAP[invoice.status] ?? invoice.status}</p>
-        </div>
+      <div className='grid grid-cols-2 gap-6 mb-6'>
         <div className='card'>
           <p className='text-xs text-gray-500 mb-1'>請求日 / 支払期限</p>
           <p className='font-medium'>{invoice.invoiceDate} → {invoice.dueDate}</p>
@@ -103,6 +104,7 @@ export default function InvoiceDetailPage() {
               <th className='table-header text-left'>品名</th>
               <th className='table-header text-right'>単価</th>
               <th className='table-header text-right'>数量</th>
+              <th className='table-header text-left'>単位</th>
               <th className='table-header text-center'>通貨</th>
               <th className='table-header text-center'>税率</th>
               <th className='table-header text-right'>税込金額(JPY)</th>
@@ -121,6 +123,7 @@ export default function InvoiceDetailPage() {
                   )}
                 </td>
                 <td className='table-cell text-right'>{item.qty}</td>
+                <td className='table-cell text-gray-500'>{item.unit ?? ''}</td>
                 <td className='table-cell text-center'>{item.currency}</td>
                 <td className='table-cell text-center'>{(item.taxRate * 100).toFixed(0)}%</td>
                 <td className='table-cell text-right font-mono font-medium'>

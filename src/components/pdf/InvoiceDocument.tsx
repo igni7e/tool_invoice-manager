@@ -6,32 +6,37 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from '@react-pdf/renderer';
 
-// IGNITEブランドカラー
+Font.register({
+  family: 'NotoSansJP',
+  fonts: [
+    { src: '/fonts/NotoSansJP-Regular.ttf', fontWeight: 400 },
+    { src: '/fonts/NotoSansJP-Bold.ttf', fontWeight: 700 },
+  ],
+});
+
+// IGNITEブランドカラー（blue/navy）
 const BRAND = {
-  orange: '#ea580c',   // brand-600
-  dark: '#9a3412',     // brand-dark
+  blue: '#1855AF',   // brand-600
+  navy: '#151C27',   // dark navy header
   gray900: '#111827',
   gray700: '#374151',
   gray500: '#6b7280',
   gray400: '#9ca3af',
   gray200: '#e5e7eb',
   gray100: '#f3f4f6',
-  orangeLight: '#fff7ed',  // orange-50
-  orangeBorder: '#fed7aa', // orange-200
+  blueLight: '#e8f0fb',   // brand-50
+  blueBorder: '#9dbdee',  // brand-200
   white: '#ffffff',
 };
 
-// Noto Sans JP はCDNから自動フォールバック
-// react-pdf は Unicode 対応フォントが必要
-// ここでは Noto Sans CJK JP を指定（手動登録が難しい場合は英語フォントのみ）
 Font.registerHyphenationCallback((word) => [word]);
 
 const styles = StyleSheet.create({
   page: {
     backgroundColor: BRAND.white,
-    fontFamily: 'Helvetica',
     fontSize: 9,
     paddingTop: 40,
     paddingBottom: 40,
@@ -46,19 +51,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 32,
   },
-  logoBox: {
-    width: 22,
-    height: 22,
-    backgroundColor: BRAND.orange,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
-  },
-  logoText: {
-    color: BRAND.white,
-    fontSize: 13,
-    fontFamily: 'Helvetica-Bold',
+  logoImage: {
+    width: 80,
+    height: 28,
+    objectFit: 'contain',
+    marginBottom: 6,
   },
   logoRow: {
     flexDirection: 'row',
@@ -67,7 +64,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray900,
   },
   companyMeta: {
@@ -77,14 +74,13 @@ const styles = StyleSheet.create({
   },
   invoiceTitle: {
     fontSize: 26,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray900,
     textAlign: 'right',
     marginBottom: 4,
   },
   invoiceNumber: {
     fontSize: 9,
-    fontFamily: 'Helvetica',
     color: BRAND.gray500,
     textAlign: 'right',
   },
@@ -97,7 +93,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 7,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray400,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -105,7 +101,7 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 13,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray900,
     marginBottom: 3,
   },
@@ -130,14 +126,14 @@ const styles = StyleSheet.create({
   },
   dateValue: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     width: 80,
     textAlign: 'right',
   },
-  dateValueOrange: {
+  dateValueBlue: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
-    color: BRAND.orange,
+    fontWeight: 700,
+    color: BRAND.blue,
     width: 80,
     textAlign: 'right',
   },
@@ -145,7 +141,7 @@ const styles = StyleSheet.create({
   // ─── 明細テーブル ───
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: BRAND.gray900,
+    backgroundColor: BRAND.navy,
     borderRadius: 4,
     paddingVertical: 8,
     paddingHorizontal: 4,
@@ -166,13 +162,13 @@ const styles = StyleSheet.create({
   // カラム幅
   colDesc: { flex: 1, paddingLeft: 8 },
   colUnit: { width: 80, textAlign: 'right', paddingRight: 4 },
-  colQty: { width: 40, textAlign: 'right', paddingRight: 4 },
+  colQty: { width: 50, textAlign: 'right', paddingRight: 4 },
   colTax: { width: 36, textAlign: 'center' },
   colAmount: { width: 80, textAlign: 'right', paddingRight: 8 },
 
   thText: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.white,
   },
   tdText: {
@@ -181,7 +177,6 @@ const styles = StyleSheet.create({
   },
   tdTextMono: {
     fontSize: 8.5,
-    fontFamily: 'Helvetica',
     color: BRAND.gray900,
   },
   tdSub: {
@@ -198,7 +193,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   totalsBox: {
-    width: 200,
+    width: 220,
   },
   totalsRow: {
     flexDirection: 'row',
@@ -211,7 +206,6 @@ const styles = StyleSheet.create({
   },
   totalsValue: {
     fontSize: 8.5,
-    fontFamily: 'Helvetica',
     color: BRAND.gray900,
   },
   totalsFinalRow: {
@@ -224,28 +218,33 @@ const styles = StyleSheet.create({
   },
   totalsFinalLabel: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray900,
   },
   totalsFinalValue: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
-    color: BRAND.orange,
+    fontWeight: 700,
+    color: BRAND.blue,
+  },
+  totalsNote: {
+    fontSize: 7,
+    color: BRAND.gray400,
+    marginTop: 4,
   },
 
   // ─── 振込先 ───
   bankBox: {
-    backgroundColor: BRAND.orangeLight,
+    backgroundColor: BRAND.blueLight,
     borderWidth: 1,
-    borderColor: BRAND.orangeBorder,
+    borderColor: BRAND.blueBorder,
     borderRadius: 6,
     padding: 12,
     marginBottom: 14,
   },
   bankLabel: {
     fontSize: 7,
-    fontFamily: 'Helvetica-Bold',
-    color: BRAND.dark,
+    fontWeight: 700,
+    color: BRAND.blue,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 6,
@@ -266,14 +265,14 @@ const styles = StyleSheet.create({
   },
   bankItemValue: {
     fontSize: 8.5,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray900,
   },
 
   // ─── 備考 ───
   notesLabel: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     color: BRAND.gray700,
     marginBottom: 4,
   },
@@ -304,11 +303,40 @@ export interface InvoicePdfData {
     descriptionEn: string | null;
     unitCost: number;
     qty: number;
+    unit?: string | null;
     taxRate: number;
     currency: string;
     exchangeRate: number | null;
     amountJpy: number;
   }>;
+  settings: {
+    companyName: string | null;
+    companyAddress: string | null;
+    companyAddressEn: string | null;
+    bankName: string | null;
+    bankBranch: string | null;
+    accountType: string | null;
+    accountNumber: string | null;
+    accountHolder: string | null;
+    accountHolderEn: string | null;
+    taxRegistrationNumber: string | null;
+    bankCode?: string | null;
+    swiftCode?: string | null;
+    bankNameEn?: string | null;
+    bankBranchEn?: string | null;
+  };
+  bankAccount?: {
+    bankName?: string | null;
+    bankBranch?: string | null;
+    bankNameEn?: string | null;
+    bankBranchEn?: string | null;
+    accountType?: string | null;
+    accountNumber?: string | null;
+    accountHolder?: string | null;
+    accountHolderEn?: string | null;
+    bankCode?: string | null;
+    swiftCode?: string | null;
+  } | null;
 }
 
 function fmt(amount: number, currency: string): string {
@@ -330,38 +358,64 @@ interface Props {
 }
 
 export function InvoiceDocument({ data, lang }: Props) {
-  const { invoice, client, items } = data;
+  const { invoice, client, items, settings, bankAccount } = data;
   const isJa = lang === 'ja';
 
-  const subtotal = items.reduce(
-    (s, item) => s + Math.floor(item.unitCost * item.qty * (item.exchangeRate ?? 1)),
-    0,
-  );
-  const tax = invoice.totalJpy - subtotal;
+  // 税率別合計（calcSubtotalJpy で丸め規則を統一）
+  const taxMap = new Map<number, { subtotal: number; tax: number }>();
+  for (const item of items) {
+    const subtotal = Math.floor(
+      item.unitCost * item.qty * (item.exchangeRate ?? 1) + Number.EPSILON
+    );
+    const taxAmt = item.amountJpy - subtotal;
+    const existing = taxMap.get(item.taxRate) ?? { subtotal: 0, tax: 0 };
+    taxMap.set(item.taxRate, { subtotal: existing.subtotal + subtotal, tax: existing.tax + taxAmt });
+  }
+  const has8 = taxMap.has(0.08);
 
   const clientName = isJa ? client.name : (client.nameEn ?? client.name);
   const clientAddress = isJa ? client.address : (client.addressEn ?? client.address);
 
+  // bankAccountが指定されていれば優先、なければsettingsにフォールバック
+  const ba = bankAccount;
+  const bankNameJa = ba?.bankName ?? settings.bankName ?? 'SMBC';
+  const bankBranchJa = ba?.bankBranch ?? settings.bankBranch ?? '';
+  const bankNameEnVal = ba?.bankNameEn ?? settings.bankNameEn;
+  const bankBranchEnVal = ba?.bankBranchEn ?? settings.bankBranchEn;
+  const bankName = isJa ? bankNameJa : (bankNameEnVal ?? bankNameJa);
+  const bankBranch = isJa ? bankBranchJa : (bankBranchEnVal ?? bankBranchJa);
+  const accountTypeRaw = ba?.accountType ?? settings.accountType ?? '普通';
+  const accountType = isJa
+    ? accountTypeRaw
+    : (accountTypeRaw === '普通' ? 'Ordinary' : accountTypeRaw === '当座' ? 'Checking' : accountTypeRaw);
+  const accountNumber = ba?.accountNumber ?? settings.accountNumber ?? '1234567';
+  const accountHolder = isJa
+    ? (ba?.accountHolder ?? settings.accountHolder ?? '（有）イグナイト')
+    : (ba?.accountHolderEn ?? settings.accountHolderEn ?? 'Ignite LLC');
+  const swiftCode = ba?.swiftCode ?? settings.swiftCode;
+  const companyName = settings.companyName ?? 'IGNITE';
+  const companyAddress = isJa
+    ? (settings.companyAddress ?? '530-0001 Osaka, Japan')
+    : (settings.companyAddressEn ?? '530-0001 Osaka, Japan');
+
   return (
     <Document
       title={invoice.invoiceNumber}
-      author="IGNITE"
+      author={companyName}
       creator="Invoice Manager"
     >
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, { fontFamily: isJa ? 'NotoSansJP' : 'Helvetica' }]}>
 
         {/* ─── ヘッダー ─── */}
         <View style={styles.header}>
           <View>
-            <View style={styles.logoRow}>
-              <View style={styles.logoBox}>
-                <Text style={styles.logoText}>I</Text>
-              </View>
-              <Text style={styles.companyName}>IGNITE</Text>
-            </View>
-            <Text style={styles.companyMeta}>
-              {'530-0001 Osaka, Japan\ndaisuke@igni7e.jp'}
-            </Text>
+            <Image src="/ignite-logo.png" style={styles.logoImage} />
+            <Text style={styles.companyMeta}>{companyAddress}</Text>
+            {settings.taxRegistrationNumber && (
+              <Text style={styles.companyMeta}>
+                {isJa ? '登録番号: ' : 'Tax Reg. No.: '}{settings.taxRegistrationNumber}
+              </Text>
+            )}
           </View>
           <View>
             <Text style={styles.invoiceTitle}>
@@ -393,7 +447,7 @@ export function InvoiceDocument({ data, lang }: Props) {
               <Text style={styles.dateLabel}>
                 {isJa ? '支払期限' : 'Due Date'}
               </Text>
-              <Text style={styles.dateValueOrange}>{invoice.dueDate}</Text>
+              <Text style={styles.dateValueBlue}>{invoice.dueDate}</Text>
             </View>
           </View>
         </View>
@@ -420,6 +474,7 @@ export function InvoiceDocument({ data, lang }: Props) {
         {items.map((item, i) => {
           const desc = isJa ? item.description : (item.descriptionEn ?? item.description);
           const isForeign = item.currency !== 'JPY';
+          const qtyLabel = item.unit ? `${item.qty}${item.unit}` : `${item.qty}`;
           return (
             <View
               key={i}
@@ -436,9 +491,9 @@ export function InvoiceDocument({ data, lang }: Props) {
                   </Text>
                 )}
               </View>
-              <Text style={[styles.tdText, styles.colQty]}>{item.qty}</Text>
+              <Text style={[styles.tdText, styles.colQty]}>{qtyLabel}</Text>
               <Text style={[styles.tdText, styles.colTax]}>
-                {(item.taxRate * 100).toFixed(0)}%
+                {(item.taxRate * 100).toFixed(0)}%{item.taxRate === 0.08 ? ' *' : ''}
               </Text>
               <Text style={[styles.tdTextMono, styles.colAmount]}>
                 {fmt(item.amountJpy, 'JPY')}
@@ -447,21 +502,28 @@ export function InvoiceDocument({ data, lang }: Props) {
           );
         })}
 
-        {/* ─── 合計 ─── */}
+        {/* ─── 合計（税率別） ─── */}
         <View style={styles.totalsSection}>
           <View style={styles.totalsBox}>
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>
-                {isJa ? '税抜合計' : 'Subtotal'}
-              </Text>
-              <Text style={styles.totalsValue}>{fmt(subtotal, 'JPY')}</Text>
-            </View>
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>
-                {isJa ? '消費税' : 'Consumption Tax'}
-              </Text>
-              <Text style={styles.totalsValue}>{fmt(tax, 'JPY')}</Text>
-            </View>
+            {Array.from(taxMap.entries())
+              .sort(([a], [b]) => b - a)
+              .map(([rate, { subtotal, tax }]) => (
+                <View key={rate}>
+                  <View style={styles.totalsRow}>
+                    <Text style={styles.totalsLabel}>
+                      {`${(rate * 100).toFixed(0)}%${isJa ? '対象計' : ' subject'}${rate === 0.08 ? ' *' : ''}`}
+                    </Text>
+                    <Text style={styles.totalsValue}>{fmt(subtotal, 'JPY')}</Text>
+                  </View>
+                  <View style={styles.totalsRow}>
+                    <Text style={styles.totalsLabel}>
+                      {isJa ? `消費税(${(rate * 100).toFixed(0)}%)` : `Tax(${(rate * 100).toFixed(0)}%)`}
+                    </Text>
+                    <Text style={styles.totalsValue}>{fmt(tax, 'JPY')}</Text>
+                  </View>
+                </View>
+              ))
+            }
             <View style={styles.totalsFinalRow}>
               <Text style={styles.totalsFinalLabel}>
                 {isJa ? '合計（税込）' : 'Total'}
@@ -470,6 +532,11 @@ export function InvoiceDocument({ data, lang }: Props) {
                 {fmt(invoice.totalJpy, 'JPY')}
               </Text>
             </View>
+            {has8 && (
+              <Text style={styles.totalsNote}>
+                {isJa ? '* 軽減税率（8%）対象' : '* Reduced tax rate (8%) applicable'}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -484,22 +551,26 @@ export function InvoiceDocument({ data, lang }: Props) {
                 {isJa ? '銀行' : 'Bank'}
               </Text>
               <Text style={styles.bankItemValue}>
-                {isJa ? '三井住友銀行 梅田支店' : 'SMBC Umeda Branch'}
+                {bankName}{bankBranch ? ` ${bankBranch}` : ''}
               </Text>
             </View>
             <View style={styles.bankItem}>
               <Text style={styles.bankItemLabel}>
                 {isJa ? '口座番号' : 'Account No.'}
               </Text>
-              <Text style={styles.bankItemValue}>普通 1234567</Text>
+              <Text style={styles.bankItemValue}>{accountType} {accountNumber}</Text>
             </View>
+            {!isJa && swiftCode && (
+              <View style={styles.bankItem}>
+                <Text style={styles.bankItemLabel}>SWIFT/BIC</Text>
+                <Text style={styles.bankItemValue}>{swiftCode}</Text>
+              </View>
+            )}
             <View style={[styles.bankItem, { marginTop: 4 }]}>
               <Text style={styles.bankItemLabel}>
                 {isJa ? '口座名義' : 'Account Name'}
               </Text>
-              <Text style={styles.bankItemValue}>
-                {isJa ? '（有）イグナイト' : 'Ignite LLC'}
-              </Text>
+              <Text style={styles.bankItemValue}>{accountHolder}</Text>
             </View>
           </View>
         </View>

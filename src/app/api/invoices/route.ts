@@ -41,6 +41,7 @@ export async function POST(request: Request) {
       descriptionEn: item.descriptionEn,
       unitCost: item.unitCost,
       qty: item.qty,
+      unit: item.unit,
       taxRate: item.taxRate,
       currency: item.currency,
       exchangeRate: item.exchangeRate,
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
       notes: body.notes,
       notesEn: body.notesEn,
       totalJpy,
+      bankAccountId: body.bankAccountId ?? null,
     }).returning();
 
     const invoice = invoiceResult[0];

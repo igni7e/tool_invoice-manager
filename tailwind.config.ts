@@ -9,22 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // IGNITEブランドカラー
+        // IGNITEブランドカラー（blue/navy）
         brand: {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          50: '#e8f0fb',
+          100: '#c6d7f5',
+          200: '#9dbdee',
+          300: '#70a2e6',
+          400: '#4a8cdf',
+          500: '#2677d9',
+          600: '#1855AF',
+          700: '#14499a',
+          800: '#0f3a7d',
+          900: '#091f4a',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+        sans: ['Open Sans', 'Noto Sans JP', 'sans-serif'],
       },
     },
   },

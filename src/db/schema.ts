@@ -28,6 +28,7 @@ export const invoices = sqliteTable('invoices', {
   notes: text('notes'),
   notesEn: text('notes_en'),
   totalJpy: integer('total_jpy').notNull().default(0),
+  bankAccountId: integer('bank_account_id'),
   createdAt: text('created_at').default(sql`(datetime('now'))`),
 });
 
@@ -40,10 +41,48 @@ export const invoiceItems = sqliteTable('invoice_items', {
   unitCost: real('unit_cost').notNull(),
   qty: real('qty').notNull().default(1),
   taxRate: real('tax_rate').notNull().default(0.1),
+  unit: text('unit'),  // 件、ページ等（省略可）
   currency: text('currency').notNull().default('JPY'),
   exchangeRate: real('exchange_rate').default(1),  // 外貨の場合の為替レート
   amountJpy: integer('amount_jpy').notNull(),  // ROUNDDOWN(unitCost * qty * (1+taxRate), 0) をJPY換算
   sortOrder: integer('sort_order').notNull().default(0),
+});
+
+// app_settings テーブル（single-row upsert, id=1固定）
+export const appSettings = sqliteTable('app_settings', {
+  id: integer('id').primaryKey().default(1),
+  companyName: text('company_name'),
+  companyAddress: text('company_address'),
+  companyAddressEn: text('company_address_en'),
+  bankName: text('bank_name'),
+  bankBranch: text('bank_branch'),
+  accountType: text('account_type').default('普通'),
+  accountNumber: text('account_number'),
+  accountHolder: text('account_holder'),
+  accountHolderEn: text('account_holder_en'),
+  taxRegistrationNumber: text('tax_registration_number'),  // T + 13桁
+  bankCode: text('bank_code'),        // 銀行コード（4桁）
+  swiftCode: text('swift_code'),      // SWIFT/BIC コード
+  bankNameEn: text('bank_name_en'),   // 銀行名（英語）
+  bankBranchEn: text('bank_branch_en'), // 支店名（英語）
+});
+
+// bank_accounts テーブル
+export const bankAccounts = sqliteTable('bank_accounts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  label: text('label').notNull(),
+  bankName: text('bank_name'),
+  bankBranch: text('bank_branch'),
+  bankNameEn: text('bank_name_en'),
+  bankBranchEn: text('bank_branch_en'),
+  accountType: text('account_type').default('普通'),
+  accountNumber: text('account_number'),
+  accountHolder: text('account_holder'),
+  accountHolderEn: text('account_holder_en'),
+  bankCode: text('bank_code'),
+  swiftCode: text('swift_code'),
+  isDefault: integer('is_default').default(0),
+  sortOrder: integer('sort_order').default(0),
 });
 
 // exchange_rates テーブル

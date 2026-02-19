@@ -1,15 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --brand-primary: #ea580c;
-  --brand-dark: #9a3412;
+  --brand-primary: #1855AF;
+  --brand-dark: #091f4a;
 }
 
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: 'Open Sans', 'Noto Sans JP', sans-serif;
   }
 }
 

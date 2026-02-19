@@ -20,6 +20,7 @@ interface InvoiceDetail {
     descriptionEn: string | null;
     unitCost: number;
     qty: number;
+    unit: string | null;
     taxRate: number;
     currency: string;
     exchangeRate: number | null;
@@ -66,6 +67,7 @@ export default function EditInvoicePage() {
       descriptionEn: item.descriptionEn ?? '',
       unitCost: item.unitCost,
       qty: item.qty,
+      unit: item.unit ?? '',
       taxRate: item.taxRate,
       currency: item.currency,
       exchangeRate: item.exchangeRate ?? 1,
