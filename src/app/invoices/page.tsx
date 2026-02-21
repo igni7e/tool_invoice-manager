@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { Suspense } from 'react';
 import InvoiceListClient from '@/components/invoices/InvoiceListClient';
 
