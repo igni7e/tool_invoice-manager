@@ -1,24 +1,72 @@
 export const runtime = 'edge';
 
 import { getDb } from '@/db';
-import { invoices, invoiceItems, exchangeRates } from '@/db/schema';
+import { invoices, invoiceItems, clients, exchangeRates } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
 import { createInvoiceSchema, parseBody } from '@/lib/validation';
-import { eq } from 'drizzle-orm';
+import { eq, and, gte, lte, asc, desc, sql, count } from 'drizzle-orm';
+
+const PAGE_SIZE = 20;
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const q = searchParams.get('q');
+    const status = searchParams.get('status');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
     const clientId = searchParams.get('clientId');
+    const sort = searchParams.get('sort') ?? 'date_desc';
+    const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
 
     const db = getDb(process.env as unknown as { DB: D1Database });
-    const query = db.select().from(invoices);
 
-    const result = clientId
-      ? await query.where(eq(invoices.clientId, Number(clientId)))
-      : await query;
+    const conditions = [];
+    if (q) {
+      const term = `%${q.toLowerCase()}%`;
+      conditions.push(
+        sql`(LOWER(${invoices.invoiceNumber}) LIKE ${term} OR LOWER(${clients.name}) LIKE ${term} OR LOWER(${invoices.notes}) LIKE ${term})`
+      );
+    }
+    if (status) conditions.push(eq(invoices.status, status));
+    if (dateFrom) conditions.push(gte(invoices.invoiceDate, dateFrom));
+    if (dateTo) conditions.push(lte(invoices.invoiceDate, dateTo));
+    if (clientId) conditions.push(eq(invoices.clientId, Number(clientId)));
 
-    return Response.json(result);
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const orderBy = sort === 'date_asc' ? asc(invoices.invoiceDate)
+      : sort === 'amount_desc' ? desc(invoices.totalJpy)
+      : sort === 'amount_asc' ? asc(invoices.totalJpy)
+      : desc(invoices.invoiceDate);
+
+    const [rows, countResult] = await Promise.all([
+      db.select({
+        id: invoices.id,
+        invoiceNumber: invoices.invoiceNumber,
+        invoiceDate: invoices.invoiceDate,
+        dueDate: invoices.dueDate,
+        currency: invoices.currency,
+        status: invoices.status,
+        totalJpy: invoices.totalJpy,
+        clientName: clients.name,
+      })
+        .from(invoices)
+        .leftJoin(clients, eq(invoices.clientId, clients.id))
+        .where(where ?? sql`1=1`)
+        .orderBy(orderBy)
+        .limit(PAGE_SIZE)
+        .offset((page - 1) * PAGE_SIZE),
+      db.select({ total: count() })
+        .from(invoices)
+        .leftJoin(clients, eq(invoices.clientId, clients.id))
+        .where(where ?? sql`1=1`),
+    ]);
+
+    const total = countResult[0]?.total ?? 0;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+
+    return Response.json({ data: rows, total, page, totalPages, pageSize: PAGE_SIZE });
   } catch (error) {
     console.error(error);
     return Response.json({ error: 'Failed to fetch invoices' }, { status: 500 });
