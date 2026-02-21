@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { invoices, invoiceItems, exchangeRates, clients, bankAccounts } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
@@ -12,7 +13,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     const invoiceResult = await db
       .select()
@@ -60,7 +61,7 @@ export async function PUT(
     if ('error' in parsed) return parsed.error;
     const body = parsed.data;
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     // 請求書の存在確認
     const existing = await db
@@ -134,7 +135,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     // invoice_items, exchange_rates は ON DELETE CASCADE で自動削除
     const result = await db

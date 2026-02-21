@@ -1,12 +1,13 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { createClientSchema, parseBody } from '@/lib/validation';
 
 export async function GET() {
   try {
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
     const result = await db.select().from(clients);
     return Response.json(result);
   } catch (error) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     if ('error' in parsed) return parsed.error;
     const body = parsed.data;
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
     const result = await db.insert(clients).values({
       name: body.name,
       nameEn: body.nameEn,

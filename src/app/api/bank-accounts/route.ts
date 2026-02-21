@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { bankAccounts } from '@/db/schema';
 import { createBankAccountSchema, parseBody } from '@/lib/validation';
@@ -7,7 +8,7 @@ import { eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
     const result = await db.select().from(bankAccounts);
     return Response.json(result);
   } catch (error) {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     if ('error' in parsed) return parsed.error;
     const body = parsed.data;
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     // デフォルト口座に設定する場合、既存のデフォルトを解除
     if (body.isDefault === 1) {

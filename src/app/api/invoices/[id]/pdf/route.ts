@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { invoices, invoiceItems, clients, exchangeRates } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -10,7 +11,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     const invoiceResult = await db
       .select()

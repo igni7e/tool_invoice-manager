@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { bankAccounts } from '@/db/schema';
 import { updateBankAccountSchema, parseBody } from '@/lib/validation';
@@ -16,7 +17,7 @@ export async function PUT(
     if ('error' in parsed) return parsed.error;
     const body = parsed.data;
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     // デフォルト口座に設定する場合、既存のデフォルトを解除
     if (body.isDefault === 1) {
@@ -46,7 +47,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     const result = await db
       .delete(bankAccounts)

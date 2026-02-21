@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { clients, invoices } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -11,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
     const result = await db.select().from(clients).where(eq(clients.id, Number(id)));
 
     if (result.length === 0) {
@@ -48,7 +49,7 @@ export async function PUT(
     if (body.currency !== undefined) updateData.currency = body.currency;
     if (body.taxRate !== undefined) updateData.taxRate = body.taxRate;
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
     const result = await db
       .update(clients)
       .set(updateData)
@@ -73,7 +74,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const clientId = Number(id);
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     // 関連請求書の存在チェック（ON DELETE RESTRICT 対策）
     const relatedInvoices = await db

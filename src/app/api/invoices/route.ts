@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { invoices, invoiceItems, clients, exchangeRates } from '@/db/schema';
 import { calcAmountJpy, calcTotals } from '@/lib/rounding';
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const sort = searchParams.get('sort') ?? 'date_desc';
     const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
 
-    const db = getDb(process.env as unknown as { DB: D1Database });
+    const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
 
     const conditions = [];
     if (q) {
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const db = getDb(process.env as unknown as { DB: D1Database });
+  const db = getDb(getRequestContext().env as unknown as { DB: D1Database });
   let invoiceId: number | undefined;
 
   try {
