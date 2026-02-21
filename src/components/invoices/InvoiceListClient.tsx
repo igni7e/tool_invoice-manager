@@ -116,7 +116,7 @@ export default function InvoiceListClient({ initialParams }: { initialParams: Re
 
       {loading ? (
         <div className='p-8 text-center text-gray-400'>読み込み中...</div>
-      ) : !result || result.data.length === 0 ? (
+      ) : !result || !result.data || result.data.length === 0 ? (
         <div className='p-8 text-center text-gray-400'>請求書がありません</div>
       ) : (
         <>
