@@ -27,7 +27,7 @@ export default function DashboardPage() {
       fetch('/api/invoices').then((r) => r.json()),
       fetch('/api/clients').then((r) => r.json()),
     ]).then(([invData, cliData]) => {
-      setInvoices((invData as Invoice[]) ?? []);
+      setInvoices((invData as { data: Invoice[] }).data ?? []);
       setClients((cliData as Client[]) ?? []);
       setLoading(false);
     });
